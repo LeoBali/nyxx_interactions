@@ -13,3 +13,6 @@ typedef MultiselectInteractionHandler = FutureOr<void> Function(IMultiselectInte
 
 /// Function that will handle execution of button interaction event
 typedef AutocompleteInteractionHandler = FutureOr<void> Function(IAutocompleteInteractionEvent);
+
+/// Function that will handle execution of modal interaction event
+typedef ModalInteractionHandler = FutureOr<void> Function(IModalInteractionEvent);

@@ -53,6 +53,9 @@ abstract class IInteractions {
   /// Register callback for slash command event for given [id]
   void registerSlashCommandHandler(String id, SlashCommandHandler handler);
 
+  /// Register callback for modal event for given [id]
+  void registerModalHandler(String id, ModalInteractionHandler handler);
+
   /// Deletes global command
   Future<void> deleteGlobalCommand(Snowflake commandId);
 
@@ -89,6 +92,7 @@ class Interactions implements IInteractions {
   final _buttonHandlers = <String, ButtonInteractionHandler>{};
   final _autocompleteHandlers = <String, AutocompleteInteractionHandler>{};
   final _multiselectHandlers = <String, MultiselectInteractionHandler>{};
+  final _modalHandlers = <String, ModalInteractionHandler>{};
 
   final permissionOverridesCache = <Snowflake, Map<Snowflake, SlashCommandPermissionOverrides>>{};
 
@@ -269,6 +273,16 @@ class Interactions implements IInteractions {
       });
     }
 
+    if (_modalHandlers.isNotEmpty) {
+      events.onModalEvent.listen((event) {
+        if (_modalHandlers.containsKey(event.interaction.customId)) {
+          _logger.info("Executing modal with id [${event.interaction.customId}]");
+          _modalHandlers[event.interaction.customId]!(event);
+        } else {
+          _logger.warning("Received event for unknown button: ${event.interaction.customId}");
+        }
+      });
+    }
     _commandBuilders.clear(); // Cleanup after registering command since we don't need this anymore
     _logger.info("Finished registering commands");
   }
@@ -288,6 +302,9 @@ class Interactions implements IInteractions {
   /// Register callback for slash command event for given [id]
   @override
   void registerSlashCommandHandler(String id, SlashCommandHandler handler) => _commandHandlers[id] = handler;
+
+  @override
+  void registerModalHandler(String id, ModalInteractionHandler handler) => _modalHandlers[id] = handler;
 
   /// Deletes global command
   @override
@@ -317,8 +334,7 @@ class Interactions implements IInteractions {
       interactionsEndpoints.fetchGuildCommands(client.appId, guildId, withLocales: withLocales);
 
   @override
-  Cacheable<Snowflake, ISlashCommandPermissionOverrides> getGlobalOverridesInGuild(Snowflake guildId) =>
-      SlashCommandPermissionOverridesCacheable(client.appId, guildId, this);
+  Cacheable<Snowflake, ISlashCommandPermissionOverrides> getGlobalOverridesInGuild(Snowflake guildId) => SlashCommandPermissionOverridesCacheable(client.appId, guildId, this);
 
   void _extractCommandIds(List<ISlashCommand> commands) {
     for (final slashCommand in commands) {
